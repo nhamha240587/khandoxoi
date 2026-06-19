@@ -2,25 +2,23 @@
 
 import { useState, useRef, useEffect } from 'react'
 
-// ── Image paths ────────────────────────────────────────────────────────────────
-const IMG = '/images/khan-do-xoi/'
+// ─── Assets (flat in /images/khan-do-xoi/) ────────────────────────────────────
+const IMG = {
+  luoi:   '/images/khan-do-xoi/724597989_1683075906108439_2952143396022032152_n.jpg',
+  gapgon: '/images/khan-do-xoi/706035495_1627795419070070_876115190267151157_n.jpg',
+  xoicho: '/images/khan-do-xoi/724485203_2296217747574178_5800612475932619747_n.jpg',
+  review: '/images/khan-do-xoi/724613553_990229680459328_6428958116600383338_n.jpg',
+  phu:    '/images/khan-do-xoi/722995300_1362690915719266_3411856794429446282_n.jpg',
+}
 
-const SAN_PHAM = [
-  { src: IMG + '724597989_1683075906108439_2952143396022032152_n.jpg', label: 'Vải lưới mắt thưa – hơi nước thoát đều' },
-  { src: IMG + '706035495_1627795419070070_876115190267151157_n.jpg',  label: 'Khăn dày dặn, may viền chắc chắn' },
-]
+const PRICE = 49000
+const fmt = (n: number) => n.toLocaleString('vi-VN') + 'đ'
 
-const THANH_PHAM = [
-  { src: IMG + '724485203_2296217747574178_5800612475932619747_n.jpg', label: 'Xôi chín đều, ráo hạt, không dính chảo' },
-  { src: IMG + '724613553_990229680459328_6428958116600383338_n.jpg',  label: 'Review thật từ khách: "xôi ráo ngon hơn hẳn"' },
-  { src: IMG + '722995300_1362690915719266_3411856794429446282_n.jpg', label: 'Khăn phủ giữ nhiệt – xôi không bị nhão' },
-]
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface QR { bankAccount: string; bankCode: string; accountName: string; amount: number; content: string; qrUrl: string }
+interface PaymentData { refCode: string; totalPrice: number; productLabel: string; qr: QR }
 
-const PRICES: Record<string, number> = { 'nho': 35000, 'lon': 59000 }
-
-function fmt(n: number) { return n.toLocaleString('vi-VN') + 'đ' }
-
-// ── Countdown ─────────────────────────────────────────────────────────────────
+// ─── Countdown ────────────────────────────────────────────────────────────────
 function Countdown({ seconds }: { seconds: number }) {
   const [left, setLeft] = useState(seconds)
   useEffect(() => {
@@ -30,430 +28,396 @@ function Countdown({ seconds }: { seconds: number }) {
   }, [left])
   const m = Math.floor(left / 60).toString().padStart(2, '0')
   const s = (left % 60).toString().padStart(2, '0')
-  return <span className={left < 120 ? 'text-red-500 font-bold' : 'font-bold text-[#92400E]'}>{m}:{s}</span>
-}
-
-// ── Payment Step ──────────────────────────────────────────────────────────────
-interface PaymentData {
-  refCode: string
-  totalPrice: number
-  productLabel: string
-  qr: { bankAccount: string; bankCode: string; accountName: string; amount: number; content: string; qrUrl: string }
-}
-interface FormState {
-  name: string; phone: string; email: string; address: string
-  product: 'nho' | 'lon'; quantity: number; note: string
-}
-
-function PaymentStep({ data, form }: { data: PaymentData; form: FormState }) {
-  const [copied, setCopied] = useState<'ref' | 'amount' | null>(null)
-  function copy(text: string, type: 'ref' | 'amount') {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(type)
-      setTimeout(() => setCopied(null), 2000)
-    })
-  }
   return (
-    <div className="space-y-5">
-      <div className="text-center">
-        <p className="text-[#92400E] font-extrabold text-lg mb-0.5">Bước 2: Chuyển khoản để xác nhận đơn</p>
-        <p className="text-gray-500 text-sm">Quét QR hoặc chuyển khoản thủ công trong <Countdown seconds={30 * 60} /></p>
+    <span style={{ fontVariantNumeric: 'tabular-nums' }}
+      className={left < 120 ? 'text-red-500 font-extrabold animate-pulse' : 'font-extrabold text-[#0D3B22]'}>
+      {m}:{s}
+    </span>
+  )
+}
+
+// ─── Payment Step ─────────────────────────────────────────────────────────────
+function PaymentStep({ data, name, qty }: { data: PaymentData; name: string; qty: number }) {
+  const [copied, setCopied] = useState<'ref' | 'amt' | null>(null)
+  const copy = (text: string, k: 'ref' | 'amt') => {
+    navigator.clipboard.writeText(text).then(() => { setCopied(k); setTimeout(() => setCopied(null), 2500) })
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F4FCF7]">
+      <div className="bg-[#0D3B22] text-white text-center py-4 px-4">
+        <p className="text-green-300 text-sm font-semibold">Đơn của bạn đã được ghi nhận!</p>
+        <p className="font-extrabold text-lg mt-0.5">Hoàn tất chuyển khoản để xác nhận giao hàng</p>
       </div>
 
-      <div className="flex justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={data.qr.qrUrl} alt="QR chuyển khoản"
-          className="w-52 h-52 rounded-2xl border-4 border-[#B45309] shadow-lg object-contain bg-white" />
-      </div>
+      <div className="max-w-sm mx-auto w-full px-4 py-6 space-y-5">
+        <div className="bg-white border border-[#C8E6D0] rounded-2xl py-3 px-4 text-center shadow-sm">
+          <p className="text-sm text-gray-500">QR thanh toán hết hạn sau</p>
+          <p className="text-4xl mt-1"><Countdown seconds={30 * 60} /></p>
+          <p className="text-xs text-gray-400 mt-0.5">Vui lòng chuyển khoản trước khi hết giờ</p>
+        </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2.5 text-sm">
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">Ngân hàng</span>
-          <span className="font-bold">{data.qr.bankCode} – {data.qr.accountName}</span>
+        <div className="bg-white rounded-3xl p-5 shadow-md text-center border border-[#C8E6D0]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={data.qr.qrUrl} alt="QR chuyển khoản"
+            className="w-48 h-48 mx-auto rounded-xl border-2 border-[#C8E6D0] object-contain" />
+          <p className="text-xs text-gray-400 mt-2">Quét bằng app ngân hàng bất kỳ</p>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">Số tài khoản</span>
-          <span className="font-bold font-mono">{data.qr.bankAccount}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">Số tiền</span>
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-[#B45309] text-base">{fmt(data.totalPrice)}</span>
-            <button onClick={() => copy(String(data.totalPrice), 'amount')}
-              className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-0.5 rounded-lg transition-colors">
-              {copied === 'amount' ? '✓ Đã copy' : 'Copy'}
-            </button>
+
+        <div className="bg-white rounded-2xl border border-[#C8E6D0] divide-y divide-[#E8F5EC] overflow-hidden shadow-sm">
+          <div className="flex justify-between items-center px-4 py-3 text-sm">
+            <span className="text-gray-500">Ngân hàng</span>
+            <span className="font-bold">{data.qr.bankCode} · {data.qr.accountName}</span>
+          </div>
+          <div className="flex justify-between items-center px-4 py-3 text-sm">
+            <span className="text-gray-500">Số tài khoản</span>
+            <span className="font-mono font-bold">{data.qr.bankAccount}</span>
+          </div>
+          <div className="flex justify-between items-center px-4 py-3">
+            <span className="text-sm text-gray-500">Số tiền</span>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-[#155C34]">{fmt(data.totalPrice)}</span>
+              <button onClick={() => copy(String(data.totalPrice), 'amt')} aria-label="Copy số tiền"
+                className="min-w-[44px] min-h-[44px] text-xs bg-green-50 text-green-700 px-2 rounded-lg font-medium flex items-center justify-center">
+                {copied === 'amt' ? '✓' : 'Copy'}
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center px-4 py-3 bg-green-50">
+            <div>
+              <span className="text-sm text-gray-500">Nội dung CK</span>
+              <span className="text-red-500 text-xs font-bold ml-1">(bắt buộc)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold font-mono text-[#155C34]">{data.refCode}</span>
+              <button onClick={() => copy(data.refCode, 'ref')} aria-label="Copy mã chuyển khoản"
+                className="min-w-[44px] min-h-[44px] text-xs bg-green-100 text-green-800 px-2 rounded-lg font-bold flex items-center justify-center">
+                {copied === 'ref' ? '✓ Đã copy' : 'Copy'}
+              </button>
+            </div>
           </div>
         </div>
-        <div className="flex justify-between items-center border-t border-amber-100 pt-2.5">
-          <span className="text-gray-500">Nội dung CK <span className="text-red-500 font-bold">(bắt buộc)</span></span>
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold font-mono text-[#92400E]">{data.refCode}</span>
-            <button onClick={() => copy(data.refCode, 'ref')}
-              className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-0.5 rounded-lg transition-colors">
-              {copied === 'ref' ? '✓ Đã copy' : 'Copy'}
-            </button>
-          </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+          Nhập <strong>đúng nội dung</strong> <code className="bg-amber-100 px-1 rounded">{data.refCode}</code> khi chuyển — hệ thống tự xác nhận, Cô Hạ nhận thông báo và chuẩn bị giao hàng ngay.
         </div>
-      </div>
 
-      <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-xs text-orange-800">
-        ⚠️ Nhập <strong>đúng nội dung</strong> <code className="bg-orange-100 px-1 rounded">{data.refCode}</code> khi chuyển khoản – hệ thống tự động xác nhận và đơn hàng chuyển ngay sang trạng thái <strong>Chờ chuyển hàng</strong>.
-      </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+          Giá <strong>{fmt(data.totalPrice)}</strong> chưa bao gồm phí vận chuyển — phí ship tính riêng khi giao hàng.
+        </div>
 
-      <div className="text-center text-sm text-gray-400 pt-1">
-        <p>Đơn của <strong>{form.name}</strong> · {data.productLabel} × {form.quantity}</p>
-        <p className="mt-1">Sau khi chuyển khoản, đơn được xử lý tự động – không cần chờ xác nhận.</p>
+        <div className="text-center text-sm text-gray-500 pb-8">
+          <p>Đơn của <strong className="text-gray-700">{name}</strong> · Khăn 1m×1m × {qty}</p>
+          <p className="mt-1 text-xs">Sau khi chuyển khoản, đơn tự động xác nhận — không cần báo lại.</p>
+        </div>
       </div>
     </div>
   )
 }
 
-// ── Order Form ─────────────────────────────────────────────────────────────────
+// ─── Order Form ───────────────────────────────────────────────────────────────
 function OrderForm() {
-  const [form, setForm] = useState<FormState>({
-    name: '', phone: '', email: '', address: '',
-    product: 'nho', quantity: 1, note: '',
-  })
-  const [step, setStep] = useState<'idle' | 'loading' | 'payment' | 'error'>('idle')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [qty, setQty] = useState(1)
+  const [note, setNote] = useState('')
+  const [step, setStep] = useState<'idle' | 'loading' | 'done' | 'err'>('idle')
   const [error, setError] = useState('')
-  const [paymentData, setPaymentData] = useState<PaymentData | null>(null)
+  const [payment, setPayment] = useState<PaymentData | null>(null)
+  const total = PRICE * qty
 
-  const total = PRICES[form.product] * form.quantity
-
-  function set<K extends keyof FormState>(k: K, v: FormState[K]) {
-    setForm(f => ({ ...f, [k]: v }))
-    setError('')
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.name.trim() || !form.phone.trim() || !form.address.trim()) {
-      setError('Vui lòng điền đủ: Họ tên, Số điện thoại, Địa chỉ')
+    if (!name.trim() || !phone.trim() || !address.trim()) {
+      setError('Vui lòng điền đủ họ tên, số điện thoại và địa chỉ')
       return
     }
-    setStep('loading')
+    setStep('loading'); setError('')
     try {
       const res = await fetch('/api/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ name, phone, address, quantity: qty, note }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Lỗi')
-      setPaymentData(data)
-      setStep('payment')
+      setPayment(data); setStep('done')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra')
-      setStep('error')
+      setError(err instanceof Error ? err.message : 'Có lỗi, thử lại nhé')
+      setStep('err')
     }
   }
 
-  if (step === 'payment' && paymentData) {
-    return <PaymentStep data={paymentData} form={form} />
-  }
-
-  const products = [
-    { key: 'nho' as const, label: 'Nhỏ 60×60cm', sub: 'Gia đình 1–2kg nếp', icon: '🧺', popular: false },
-    { key: 'lon' as const, label: 'Lớn 90×100cm', sub: 'Đặt tiệc 3–4kg nếp', icon: '🪣', popular: true },
-  ]
+  if (step === 'done' && payment) return <PaymentStep data={payment} name={name} qty={qty} />
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Product Selection */}
-      <div>
-        <p className="font-bold text-gray-700 mb-2">Chọn kích thước *</p>
-        <div className="grid grid-cols-2 gap-3">
-          {products.map(p => (
-            <button type="button" key={p.key}
-              onClick={() => set('product', p.key)}
-              className={`border-2 rounded-xl p-4 text-center transition-all ${
-                form.product === p.key
-                  ? 'border-[#B45309] bg-amber-50'
-                  : 'border-gray-200 hover:border-amber-300'
-              }`}>
-              <span className="text-2xl">{p.icon}</span>
-              <p className="font-extrabold text-base text-[#92400E] mt-1">{p.label}</p>
-              <p className="text-[#B45309] font-bold text-base">{fmt(PRICES[p.key])}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{p.sub}</p>
-              {p.popular && <p className="text-xs text-amber-600 font-semibold mt-0.5">Phổ biến nhất</p>}
-            </button>
-          ))}
+    <form onSubmit={submit} className="space-y-4">
+      <div className="flex items-center justify-between bg-green-50 rounded-xl px-4 py-3 border border-[#C8E6D0]">
+        <div>
+          <p className="font-bold text-[#0D3B22]">Khăn Đồ Xôi 1m×1m</p>
+          <p className="text-xs text-gray-500 mt-0.5">Vải lưới hấp xôi · Bếp Cô Hạ</p>
+        </div>
+        <div className="text-right">
+          <p className="font-extrabold text-xl text-[#155C34]">{fmt(PRICE)}</p>
+          <p className="text-xs text-gray-400">chưa gồm ship</p>
         </div>
       </div>
 
-      {/* Quantity */}
       <div>
-        <label className="font-bold text-gray-700 mb-2 block">Số lượng *</label>
+        <label className="block text-sm font-bold text-gray-700 mb-2">Số lượng</label>
         <div className="flex items-center gap-3">
-          <button type="button"
-            onClick={() => set('quantity', Math.max(1, form.quantity - 1))}
-            className="w-10 h-10 rounded-full border-2 border-gray-200 text-xl font-bold hover:border-amber-400 transition-colors flex items-center justify-center">
+          <button type="button" aria-label="Giảm" onClick={() => setQty(q => Math.max(1, q - 1))}
+            className="w-11 h-11 rounded-full border-2 border-gray-200 text-xl font-bold flex items-center justify-center hover:border-[#1E7A43] transition-colors">
             −
           </button>
-          <span className="w-10 text-center font-bold text-xl text-[#92400E]">{form.quantity}</span>
-          <button type="button"
-            onClick={() => set('quantity', Math.min(20, form.quantity + 1))}
-            className="w-10 h-10 rounded-full border-2 border-gray-200 text-xl font-bold hover:border-amber-400 transition-colors flex items-center justify-center">
+          <span className="w-8 text-center font-extrabold text-xl text-[#155C34]">{qty}</span>
+          <button type="button" aria-label="Tăng" onClick={() => setQty(q => Math.min(20, q + 1))}
+            className="w-11 h-11 rounded-full border-2 border-gray-200 text-xl font-bold flex items-center justify-center hover:border-[#1E7A43] transition-colors">
             +
           </button>
-          <span className="ml-2 text-sm text-gray-500">Tổng: <strong className="text-[#B45309] text-base">{fmt(total)}</strong></span>
+          {qty > 1 && <span className="text-sm font-bold text-[#155C34]">= {fmt(total)}</span>}
         </div>
       </div>
 
-      {/* Personal Info */}
+      {[
+        { id: 'name', label: 'Họ và tên *', val: name, set: setName, type: 'text', ph: 'Nguyễn Thị Lan' },
+        { id: 'phone', label: 'Số điện thoại *', val: phone, set: setPhone, type: 'tel', ph: '0912 345 678' },
+      ].map(f => (
+        <div key={f.id}>
+          <label htmlFor={f.id} className="block text-sm font-bold text-gray-700 mb-2">{f.label}</label>
+          <input id={f.id} type={f.type} inputMode={f.type === 'tel' ? 'numeric' : 'text'}
+            value={f.val} onChange={e => { f.set(e.target.value); setError('') }}
+            placeholder={f.ph}
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-[#1E7A43] focus:outline-none transition-colors" />
+        </div>
+      ))}
       <div>
-        <label className="font-bold text-gray-700 mb-2 block">Họ và tên *</label>
-        <input value={form.name} onChange={e => set('name', e.target.value)}
-          placeholder="Ví dụ: Nguyễn Thị Lan"
-          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-[#B45309] focus:outline-none transition-colors" />
+        <label htmlFor="address" className="block text-sm font-bold text-gray-700 mb-2">Địa chỉ giao hàng *</label>
+        <textarea id="address" value={address} onChange={e => { setAddress(e.target.value); setError('') }}
+          placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
+          rows={3} className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-[#1E7A43] focus:outline-none transition-colors resize-none" />
       </div>
       <div>
-        <label className="font-bold text-gray-700 mb-2 block">Số điện thoại *</label>
-        <input value={form.phone} onChange={e => set('phone', e.target.value)}
-          placeholder="0912 345 678" type="tel"
-          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-[#B45309] focus:outline-none transition-colors" />
-      </div>
-      <div>
-        <label className="font-bold text-gray-700 mb-2 block">Email <span className="text-gray-400 font-normal">(không bắt buộc)</span></label>
-        <input value={form.email} onChange={e => set('email', e.target.value)}
-          placeholder="email@gmail.com" type="email"
-          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-[#B45309] focus:outline-none transition-colors" />
-      </div>
-      <div>
-        <label className="font-bold text-gray-700 mb-2 block">Địa chỉ giao hàng chi tiết *</label>
-        <textarea value={form.address} onChange={e => set('address', e.target.value)}
-          placeholder="Số nhà, ngõ/hẻm, đường, phường/xã, quận/huyện, tỉnh/thành phố"
-          rows={3}
-          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-[#B45309] focus:outline-none transition-colors resize-none" />
-      </div>
-      <div>
-        <label className="font-bold text-gray-700 mb-2 block">Ghi chú <span className="text-gray-400 font-normal">(không bắt buộc)</span></label>
-        <input value={form.note} onChange={e => set('note', e.target.value)}
+        <label htmlFor="note" className="block text-sm text-gray-500 mb-1.5">Ghi chú <span className="text-gray-400">(không bắt buộc)</span></label>
+        <input id="note" type="text" value={note} onChange={e => setNote(e.target.value)}
           placeholder="Giao giờ nào, yêu cầu đặc biệt..."
-          className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-[#B45309] focus:outline-none transition-colors" />
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-[#C8E6D0] focus:outline-none transition-colors text-sm" />
       </div>
 
-      {error && (
-        <p className="text-red-500 text-sm bg-red-50 rounded-xl py-2.5 px-4 text-center">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-sm bg-red-50 rounded-xl py-2.5 px-4 text-center">{error}</p>}
 
       <button type="submit" disabled={step === 'loading'}
-        className="w-full py-4 rounded-2xl font-extrabold text-white text-lg bg-gradient-to-r from-[#B45309] to-[#92400E] hover:from-[#92400E] hover:to-[#B45309] transition-all active:scale-95 disabled:opacity-60 shadow-lg shadow-amber-200">
+        className="w-full min-h-[52px] rounded-2xl font-extrabold text-[#0D3B22] text-lg bg-[#F0B429] hover:bg-[#e8a820] transition-all active:scale-95 disabled:opacity-60 shadow-lg">
         {step === 'loading'
           ? <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>Đang gửi đơn...
             </span>
-          : '🛒 ĐẶT HÀNG NGAY – NHẬN QR CHUYỂN KHOẢN'}
+          : `ĐẶT HÀNG NGAY · ${fmt(total)}`}
       </button>
-      <p className="text-xs text-gray-400 text-center">🔒 Thông tin bảo mật tuyệt đối · Xác nhận đơn qua chuyển khoản</p>
+
+      <div className="flex justify-center gap-5 text-xs text-gray-400 pt-1">
+        <span>Bảo mật 100%</span>
+        <span>·</span>
+        <span>Ship toàn quốc</span>
+        <span>·</span>
+        <span>Đổi trả nếu lỗi</span>
+      </div>
     </form>
   )
 }
 
-// ── MAIN PAGE ──────────────────────────────────────────────────────────────────
+// ─── FAQ ──────────────────────────────────────────────────────────────────────
+function Faq({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border border-[#C8E6D0] rounded-2xl overflow-hidden">
+      <button onClick={() => setOpen(o => !o)} aria-expanded={open}
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[#F4FCF7] transition-colors min-h-[52px]">
+        <span className="font-bold text-[#0D3B22] text-sm pr-4 leading-snug">{q}</span>
+        <svg className={`flex-shrink-0 w-5 h-5 text-[#155C34] transition-transform duration-200 ${open ? 'rotate-45' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+      {open && (
+        <div className="px-5 pb-4 text-gray-600 text-sm leading-relaxed border-t border-[#E8F5EC] pt-3">
+          {a}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function KhanDoXoi() {
   const orderRef = useRef<HTMLDivElement>(null)
-  const scrollToOrder = () => orderRef.current?.scrollIntoView({ behavior: 'smooth' })
+  const [showSticky, setShowSticky] = useState(false)
+
+  useEffect(() => {
+    const fn = () => setShowSticky(window.scrollY > 600)
+    window.addEventListener('scroll', fn, { passive: true })
+    return () => window.removeEventListener('scroll', fn)
+  }, [])
+
+  const scrollToOrder = () => orderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   return (
-    <div className="min-h-screen bg-[#FFFBF5] font-sans">
+    <div className="min-h-screen bg-white font-sans">
 
-      {/* ╔═ HERO ═╗ */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#451A03] via-[#92400E] to-[#78350F] text-white">
-        <div className="absolute inset-0 opacity-5"
-          style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      {/* [0] Announcement Bar */}
+      <div className="bg-[#155C34] text-white text-center py-2.5 px-4 text-sm font-semibold">
+        <span className="text-yellow-300">Kho hàng có hạn</span>
+        {' '}— Đặt hàng hôm nay, giao trong 2–4 ngày toàn quốc
+      </div>
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-10 pb-14">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <div className="bg-white rounded-2xl px-5 py-3 shadow-xl inline-flex items-center gap-3">
+      {/* [1] Hero */}
+      <section className="bg-gradient-to-b from-[#0D3B22] to-[#155C34] text-white overflow-hidden">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-7 pb-0">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 inline-flex items-center gap-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/images/logo-bep-co-ha.png" alt="Bếp Cô Hạ"
-                className="h-12 w-12 object-contain"
-                onError={e => { (e.currentTarget as HTMLImageElement).style.display='none' }} />
-              <div>
-                <p className="text-[#92400E] font-extrabold text-xl leading-tight tracking-tight">Bếp Cô Hạ</p>
-                <p className="text-gray-400 text-xs">Hacofood.vn</p>
-              </div>
+                className="h-8 w-8 object-contain"
+                onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+              <span className="font-bold text-sm">Bếp Cô Hạ · Hacofood.vn</span>
             </div>
           </div>
 
-          {/* Viral badge */}
-          <div className="flex justify-center mb-5">
-            <span className="bg-red-500 text-white text-sm font-bold px-5 py-1.5 rounded-full animate-bounce shadow">
-              🔥 Bí quyết xôi ngon của người bán hàng rong
-            </span>
-          </div>
+          <div className="grid md:grid-cols-2 gap-8 items-end">
+            <div className="pb-10 md:pb-14">
+              <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-3">
+                Xôi Chín Đều, Ráo Hạt,<br />
+                <span className="text-[#F0B429]">Không Dính — Không Nhão.</span>
+              </h1>
+              <p className="text-green-100 text-base sm:text-lg leading-relaxed mb-6 max-w-md">
+                Khăn vải lưới 1m×1m chuyên dụng — hơi nước thoát đều khắp bề mặt, xôi ngon từng hạt. Dùng được <strong className="text-white">1000+ lần</strong>, giặt sạch dùng lại.
+              </p>
 
-          {/* Headline */}
-          <div className="text-center mb-6 max-w-3xl mx-auto">
-            <p className="text-amber-300 font-semibold text-base mb-2 italic">
-              "Đồ xôi mà không có khăn đúng chuẩn – xôi ra nát hết, dính chảo, nhìn xấu lắm." – Cô Hạ nói đấy.
-            </p>
-            <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight">
-              Xôi Chín Đều, Ráo Hạt,<br />
-              <span className="text-[#FCD34D]">Không Dính – Không Nhão</span>
-            </h1>
-            <p className="mt-4 text-amber-100 text-lg max-w-2xl mx-auto leading-relaxed">
-              Khăn Đồ Xôi Bếp Cô Hạ – vải lưới chuyên dụng, may viền kỹ lưỡng.<br className="hidden sm:block" />
-              Hơi nước thấu đều, xôi ngon từng hạt. Dùng được 1000+ lần.
-            </p>
-          </div>
-
-          {/* Product images */}
-          <div className="flex justify-center gap-4 mb-8 max-w-2xl mx-auto">
-            {SAN_PHAM.slice(0, 2).map(img => (
-              <div key={img.label} className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 flex-1 max-w-[48%]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.src} alt={img.label}
-                  className="w-full h-44 sm:h-56 object-cover" />
+              <div className="flex items-center gap-4 mb-4">
+                <div>
+                  <p className="text-green-300 text-xs font-semibold uppercase tracking-wide">Chỉ</p>
+                  <p className="text-4xl font-extrabold text-white leading-none">{fmt(PRICE)}</p>
+                  <p className="text-green-300 text-xs mt-0.5">chưa bao gồm phí vận chuyển</p>
+                </div>
+                <button onClick={scrollToOrder}
+                  className="bg-[#F0B429] hover:bg-[#e8a820] text-[#0D3B22] font-extrabold text-lg px-7 py-3.5 rounded-2xl min-h-[52px] transition-all active:scale-95 shadow-lg flex-shrink-0">
+                  Đặt Hàng Ngay →
+                </button>
               </div>
-            ))}
-          </div>
 
-          {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
-            {[
-              { icon: '🧵', text: 'Vải lưới thực phẩm cao cấp' },
-              { icon: '♻️', text: 'Dùng 1000+ lần' },
-              { icon: '🌡️', text: 'Chịu nhiệt tốt' },
-              { icon: '✂️', text: 'May viền chắc chắn' },
-            ].map(s => (
-              <div key={s.text} className="flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-2 text-sm border border-white/10">
-                <span>{s.icon}</span><span className="font-medium">{s.text}</span>
+              <div className="flex flex-wrap gap-3">
+                {['Vải lưới thực phẩm', 'May viền 4 cạnh', 'Ship toàn quốc'].map(t => (
+                  <div key={t} className="flex items-center gap-1.5 text-sm text-green-200">
+                    <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    </svg>
+                    {t}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-3">
-            <button onClick={scrollToOrder}
-              className="bg-gradient-to-r from-[#D97706] to-[#B45309] hover:from-[#B45309] hover:to-[#D97706] text-white font-extrabold text-lg px-10 py-4 rounded-2xl shadow-lg transition-all active:scale-95">
-              Đặt Hàng Ngay →
-            </button>
-            <a href="#thanh-pham"
-              className="bg-white/10 border border-white/20 text-white font-bold text-base px-8 py-4 rounded-2xl hover:bg-white/20 transition-colors text-center">
-              Xem Xôi Thành Phẩm
-            </a>
+            <div className="flex justify-center md:justify-end">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={IMG.luoi} alt="Khăn Đồ Xôi Bếp Cô Hạ 1m×1m" className="w-full max-w-xs md:max-w-sm object-contain" />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ╔═ PAIN AGITATION ═╗ */}
+      {/* [2] Trust Bar */}
+      <section className="bg-[#0D3B22] text-white border-t border-white/10">
+        <div className="max-w-4xl mx-auto px-4 py-4 grid grid-cols-3">
+          {[
+            { n: '1000+', l: 'Lần dùng được' },
+            { n: '1m×1m', l: 'Kích thước chuẩn' },
+            { n: '49k', l: 'Giá tốt nhất' },
+          ].map((s, i) => (
+            <div key={s.l} className={`text-center px-3 py-2 ${i < 2 ? 'border-r border-white/20' : ''}`}>
+              <p className="text-xl font-extrabold text-[#F0B429]">{s.n}</p>
+              <p className="text-green-300 text-xs mt-0.5">{s.l}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* [3] Pain — 3 lớp */}
       <section className="py-14 px-4 sm:px-6 bg-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <span className="inline-block border border-red-200 bg-red-50 text-red-600 font-bold text-xs px-4 py-1.5 rounded-full tracking-widest mb-4">
-            BẠN CÓ ĐANG MẮC NHỮNG LỖI NÀY?
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-8">
-            Tại Sao Nồi Xôi Nhà Bạn<br />
-            <span className="text-red-500">Lúc Nhão, Lúc Dính Chảo, Lúc Chín Không Đều?</span>
+        <div className="max-w-2xl mx-auto">
+          <p className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3">Bạn có đang gặp điều này?</p>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0D3B22] mb-8">
+            Mỗi Lần Đồ Xôi Là Một Lần<br />
+            <span className="text-red-500">Hồi Hộp Không Biết Ra Sao</span>
           </h2>
 
-          <div className="grid sm:grid-cols-2 gap-4 text-left">
+          <div className="space-y-4">
             {[
-              { icon: '😩', t: 'Không có khăn – xôi dính chảo', d: 'Xôi bám vào đáy chõ/nồi hấp, lấy ra bị nát vụn. Mất công nhặt lại, trông xấu, mà ăn vào cứng không ngon.' },
-              { icon: '💧', t: 'Khăn màn mỏng – hơi nước ngưng đọng', d: 'Dùng khăn thường thì hơi nước đọng thành giọt rơi xuống xôi, xôi bị ướt nhão, hạt gạo vỡ nát trông không đẹp.' },
-              { icon: '🔥', t: 'Hơi nước không thoát đều – xôi sống chín không đều', d: 'Mắt vải quá nhỏ, hơi không thoát được. Xôi giữa chín mà xôi ngoài rìa còn sống, phải đồ đi đồ lại mất thời gian.' },
-              { icon: '⚡', t: 'Khăn rách nhanh – tốn tiền mua mới liên tục', d: 'Khăn không may viền chắc, sau vài lần dùng là sờn rách. Mua đi mua lại tốn tiền, lại không an toàn thực phẩm.' },
-            ].map(item => (
-              <div key={item.t} className="flex gap-4 bg-red-50 rounded-2xl p-5">
-                <span className="text-3xl flex-shrink-0 mt-0.5">{item.icon}</span>
-                <div>
-                  <p className="font-bold text-gray-800 mb-1">{item.t}</p>
-                  <p className="text-gray-500 text-sm leading-relaxed">{item.d}</p>
+              { sym: 'Xôi dính chảo, lấy ra bị nát', con: 'Phải gỡ từng miếng, mất 10–15 phút dọn dẹp sau. Xôi trông xấu, mang ra không được.', ide: 'Người quen nấu xôi mà sao khó thế... chắc mình không có khiếu?' },
+              { sym: 'Dùng khăn màn mỏng — hơi ngưng tụ, xôi ướt nhão', con: 'Hạt gạo vỡ, nát bét. Nếu nấu để bán thì khách chê ngay lần đầu.', ide: 'Đồ đi đồ lại 3 lần vẫn không ổn — mất thêm 30 phút gas + thời gian.' },
+              { sym: 'Hơi không thoát đều — chỗ sống chỗ chín', con: 'Lật ra phần dưới chín nhưng phần trên còn cứng. Phải đổ vào đồ lại.', ide: 'Mua bao nhiêu khăn màn rồi mà vẫn không cái nào đúng chuẩn.' },
+            ].map((item, i) => (
+              <div key={i} className="border border-red-100 rounded-2xl overflow-hidden">
+                <div className="bg-red-50 px-5 py-3"><p className="font-bold text-gray-800 text-sm">{item.sym}</p></div>
+                <div className="px-5 py-3 space-y-1.5">
+                  <p className="text-gray-600 text-sm">{item.con}</p>
+                  <p className="text-red-400 text-xs italic">{item.ide}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <p className="mt-8 text-gray-600 text-base max-w-xl mx-auto">
-            Không phải lỗi kỹ thuật. Chỉ đơn giản là bạn chưa có đúng loại khăn.
-            <strong className="text-[#92400E]"> Cho đến khi có khăn đồ xôi Bếp Cô Hạ này.</strong>
+          <p className="mt-7 text-gray-600 text-base text-center">
+            Không phải lỗi kỹ thuật. Không phải do gạo. <strong className="text-[#155C34]">Chỉ vì thiếu đúng một chiếc khăn.</strong>
           </p>
         </div>
       </section>
 
-      {/* ╔═ GALLERY THÀNH PHẨM ═╗ */}
-      <section id="thanh-pham" className="py-14 px-4 sm:px-6 bg-[#FFFBF5]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <span className="inline-block border border-amber-300 bg-amber-50 text-[#92400E] font-bold text-xs px-5 py-1.5 rounded-full tracking-widest mb-3">
-              THÀNH PHẨM
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800">
-              Xôi Đồ Bằng Khăn Cô Hạ –<br />
-              <span className="text-[#B45309]">Hạt Tròn, Ráo, Bóng Đẹp Như Ngoài Hàng</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {THANH_PHAM.map(item => (
-              <div key={item.label} className="relative rounded-2xl overflow-hidden group shadow-md">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.src} alt={item.label}
-                  className="w-full h-56 sm:h-72 object-cover object-center group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <p className="absolute bottom-3 left-3 right-3 text-white text-sm font-semibold drop-shadow leading-tight">{item.label}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 text-center">
-            <button onClick={scrollToOrder}
-              className="bg-gradient-to-r from-[#D97706] to-[#B45309] text-white font-bold px-8 py-3.5 rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95">
-              Tôi Muốn Thử Ngay →
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ╔═ SOLUTION / MECHANISM ═╗ */}
-      <section className="py-14 px-4 sm:px-6 bg-white">
+      {/* [4] Solution Bridge */}
+      <section className="py-14 px-4 sm:px-6 bg-[#F4FCF7]">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-10 items-center">
-            {/* Left: Product image */}
-            <div className="relative flex justify-center">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl max-w-xs w-full aspect-square">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 rounded-2xl overflow-hidden shadow-md" style={{ aspectRatio: '16/9' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={SAN_PHAM[0].src} alt="Khăn đồ xôi Bếp Cô Hạ"
-                  className="w-full h-full object-cover" />
+                <img src={IMG.xoicho} alt="Xôi chín đều ráo hạt trong chõ" className="w-full h-full object-cover" />
               </div>
-              <div className="absolute -top-3 -right-3 bg-[#B45309] text-white font-extrabold text-sm px-4 py-2 rounded-full shadow-lg rotate-6">
-                May viền<br />kỹ lưỡng
+              <div className="rounded-xl overflow-hidden shadow-sm" style={{ aspectRatio: '1' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={IMG.phu} alt="Phủ khăn giữ nhiệt" className="w-full h-full object-cover" />
+              </div>
+              <div className="rounded-xl overflow-hidden shadow-sm" style={{ aspectRatio: '1' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={IMG.gapgon} alt="Khăn gấp gọn" className="w-full h-full object-cover" />
               </div>
             </div>
 
-            {/* Right: Copy */}
             <div>
-              <span className="inline-block border border-amber-300 bg-amber-50 text-[#92400E] font-bold text-xs px-4 py-1.5 rounded-full tracking-widest mb-4">
-                GIẢI PHÁP
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-4">
-                Bí Quyết Từ Cô Hạ.<br />
-                <span className="text-[#B45309]">Khăn Đồ Xôi Chuyên Dụng</span><br />
-                Xôi Ngon Ngay Từ Lần Đầu Dùng.
+              <p className="text-xs font-bold text-[#27AE60] uppercase tracking-widest mb-3">Giải pháp</p>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0D3B22] mb-4 leading-snug">
+                Cô Hạ Thử Nhiều Loại Vải<br />
+                Trước Khi Tìm Ra Đúng Cái Này
               </h2>
               <p className="text-gray-600 leading-relaxed mb-6">
-                Cô Hạ đã dùng và thử nhiều loại vải trước khi chọn ra loại vải lưới này.
-                Mắt lưới vừa đủ thưa để hơi nước thoát đều, vừa đủ dày để giữ hạt gạo.
-                <strong className="text-gray-800"> May viền 4 cạnh chắc chắn – không sờn, không rách.</strong>
+                Sau nhiều năm nấu xôi và dạy học trò, Cô Hạ nhận ra sự khác biệt không nằm ở kỹ thuật — mà ở <strong className="text-[#155C34]">loại vải lót và phủ</strong>. Mắt lưới vừa thưa để hơi thoát đều, vừa đủ dày để giữ hạt. May viền 4 cạnh chắc chắn.
               </p>
-
               <div className="space-y-3">
                 {[
-                  { icon: '🌬️', t: 'Hơi nước thoát đều – xôi chín từng hạt', d: 'Mắt lưới vừa phải, hơi nước đi qua đều khắp bề mặt. Không còn chỗ sống, chỗ chín. Xôi đều màu, đều vị.' },
-                  { icon: '💧', t: 'Khăn phủ hút ẩm – xôi không bị nhão', d: 'Đặt khăn phủ lên trên giúp hơi nước ngưng vào vải thay vì rơi xuống xôi. Xôi ráo, hạt bóng, không nhão.' },
-                  { icon: '🔒', t: 'Chống dính hoàn toàn – lấy xôi dễ dàng', d: 'Xôi không bám vào vải, không bám vào chảo. Lấy ra nguyên miếng, đẹp như ngoài hàng.' },
-                  { icon: '♻️', t: 'Bền 1000+ lần – giặt được bình thường', d: 'Vải thực phẩm cao cấp, chịu nhiệt tốt. Dùng xong giặt sạch, phơi khô. Kinh tế hơn hẳn dùng giấy bạc.' },
+                  { t: 'Hơi nước thoát đều từ dưới lên', d: 'Mắt lưới chuẩn — hơi đi qua đều khắp bề mặt. Không còn chỗ sống chỗ chín.' },
+                  { t: 'Phủ trên hút ẩm — xôi không nhão', d: 'Hơi ngưng tụ vào vải thay vì rơi xuống xôi. Hạt bóng, ráo, thơm.' },
+                  { t: 'Chống dính hoàn toàn — lấy ra nguyên miếng', d: 'Xôi không bám vải, không bám chảo. Đẹp như mua ngoài hàng.' },
+                  { t: '1m×1m đủ cho chõ lớn — dùng 1000+ lần', d: 'Giặt sạch, phơi khô, dùng tiếp. Không mua lại nhiều lần nữa.' },
                 ].map(item => (
-                  <div key={item.t} className="flex gap-3">
-                    <span className="text-2xl flex-shrink-0">{item.icon}</span>
+                  <div key={item.t} className="flex gap-3 items-start">
+                    <svg className="w-5 h-5 text-[#27AE60] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    </svg>
                     <div>
-                      <p className="font-bold text-gray-800 text-sm">{item.t}</p>
+                      <p className="font-bold text-[#0D3B22] text-sm">{item.t}</p>
                       <p className="text-gray-500 text-sm leading-relaxed">{item.d}</p>
                     </div>
                   </div>
@@ -464,280 +428,217 @@ export default function KhanDoXoi() {
         </div>
       </section>
 
-      {/* ╔═ USE CASES ═╗ */}
-      <section className="py-12 px-4 sm:px-6 bg-[#FFFBF5]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-2">
-            Dùng Được Cho Tất Cả Các Loại Xôi
-          </h2>
-          <p className="text-gray-500 mb-8">Và cả hấp bánh, hấp đậu, hấp chả...</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {/* [5] How It Works */}
+      <section className="py-14 px-4 sm:px-6 bg-white">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-xs font-bold text-[#27AE60] uppercase tracking-widest mb-3">Cách dùng</p>
+          <h2 className="text-2xl font-extrabold text-[#0D3B22] mb-8">5 Bước — Không Cần Học Thêm Gì Cả</h2>
+          <div className="space-y-3">
             {[
-              { icon: '🟡', name: 'Xôi gấc', sub: 'Màu đỏ đẹp không lem' },
-              { icon: '🟤', name: 'Xôi đậu đen', sub: 'Hạt chín đều, không vỡ' },
-              { icon: '🌿', name: 'Xôi lá cẩm', sub: 'Màu tím tự nhiên' },
-              { icon: '🫘', name: 'Hấp đậu', sub: 'Đậu mềm không nhão' },
-              { icon: '🎂', name: 'Hấp bánh', sub: 'Bánh không dính khuôn' },
-              { icon: '🍚', name: 'Xôi trắng', sub: 'Hạt bóng, thơm ngon' },
-            ].map(item => (
-              <div key={item.name} className="bg-white rounded-2xl p-5 shadow-sm text-center">
-                <span className="text-4xl">{item.icon}</span>
-                <p className="font-bold text-gray-800 mt-2">{item.name}</p>
-                <p className="text-sm text-[#92400E]">{item.sub}</p>
+              { n: '01', t: 'Ngâm nếp 4–8 tiếng', d: 'Nếp nở đều → đồ nhanh hơn, chín đều hơn.' },
+              { n: '02', t: 'Làm ẩm khăn, lót vào chõ', d: 'Khăn ẩm (không ướt đẫm) — hơi thấm qua đều, không đọng nước.' },
+              { n: '03', t: 'Đổ nếp, phủ khăn lên trên', d: 'Khăn phủ hút hơi ngưng tụ, xôi không bị ướt từ trên xuống.' },
+              { n: '04', t: 'Đồ 30–40 phút, lật đảo 1 lần', d: 'Lật ở phút 20 — phần trên xuống dưới, chín đều 100%.' },
+              { n: '05', t: 'Ủ 5 phút rồi lấy ra', d: 'Xôi ráo, hạt bóng, lấy ra không dính khăn — đẹp như hàng.' },
+            ].map((s, i) => (
+              <div key={i} className="flex gap-4 items-start p-4 rounded-xl hover:bg-[#F4FCF7] transition-colors">
+                <div className="bg-[#155C34] text-white rounded-xl w-11 h-11 flex items-center justify-center font-extrabold text-sm flex-shrink-0">{s.n}</div>
+                <div className="pt-0.5">
+                  <p className="font-bold text-[#0D3B22]">{s.t}</p>
+                  <p className="text-gray-500 text-sm mt-0.5">{s.d}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ╔═ SIZE GUIDE + HOW TO USE ═╗ */}
-      <section className="py-14 px-4 sm:px-6 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Chọn kích thước */}
-            <div className="bg-[#FFFBF5] rounded-3xl p-6 border border-amber-100">
-              <h3 className="font-extrabold text-xl text-[#92400E] mb-4">📐 Chọn Kích Thước Nào?</h3>
-              <div className="space-y-4">
-                <div className="bg-white rounded-xl p-4 border border-amber-100">
-                  <div className="flex justify-between items-start mb-1">
-                    <p className="font-bold text-gray-800">Nhỏ 60×60cm</p>
-                    <p className="font-extrabold text-[#B45309]">{fmt(PRICES['nho'])}</p>
-                  </div>
-                  <p className="text-gray-500 text-sm">Phù hợp nấu <strong>1–2kg nếp</strong> · Gia đình 3–5 người · Nấu thường ngày</p>
-                </div>
-                <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-300">
-                  <div className="flex justify-between items-start mb-1">
-                    <p className="font-bold text-gray-800">Lớn 90×100cm ⭐</p>
-                    <p className="font-extrabold text-[#B45309]">{fmt(PRICES['lon'])}</p>
-                  </div>
-                  <p className="text-gray-500 text-sm">Phù hợp nấu <strong>3–4kg nếp</strong> · Đặt tiệc, cúng giỗ · Bán xôi hàng rong</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Hướng dẫn */}
-            <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100">
-              <h3 className="font-extrabold text-xl text-[#92400E] mb-4">📋 Cách Dùng Đơn Giản</h3>
-              <ol className="space-y-2.5 text-gray-600 text-sm">
-                <li className="flex gap-2.5">
-                  <span className="bg-[#B45309] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
-                  <span>Vo nếp xong, <strong>ngâm nước 4–8 tiếng</strong> cho nếp nở đều (hoặc qua đêm)</span>
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="bg-[#B45309] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
-                  <span><strong>Làm ẩm khăn</strong>, lót vào chõ/xửng hấp</span>
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="bg-[#B45309] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
-                  <span>Đổ nếp vào, <strong>phủ khăn lên trên</strong> để giữ nhiệt</span>
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="bg-[#B45309] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">4</span>
-                  <span>Đồ <strong>30–45 phút</strong> tùy lượng nếp, lật đảo 1 lần giữa chừng</span>
-                </li>
-                <li className="flex gap-2.5">
-                  <span className="bg-[#B45309] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">5</span>
-                  <span>Lấy xôi ra, <strong>không dính – không nát</strong>. Dùng xong giặt sạch, phơi khô</span>
-                </li>
-              </ol>
-            </div>
-
-            {/* Bí quyết */}
-            <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100">
-              <h3 className="font-extrabold text-xl text-blue-700 mb-4">💡 Bí Quyết Xôi Ngon Hơn</h3>
-              <ul className="space-y-2 text-gray-600 text-sm">
-                <li className="flex gap-2">✅ <span>Khăn phải <strong>ẩm</strong> (không ướt đẫm) trước khi lót vào chõ</span></li>
-                <li className="flex gap-2">🌡️ <span>Nước sôi mạnh trước khi cho nếp vào – hơi nước đều hơn</span></li>
-                <li className="flex gap-2">⏰ <span>Lật đảo xôi sau 20 phút để phần trên xuống dưới chín đều</span></li>
-                <li className="flex gap-2">🫙 <span>Xôi chín, ủ thêm 5 phút trong chõ trước khi lấy ra – ngon hơn</span></li>
-              </ul>
-            </div>
-
-            {/* Bảo quản khăn */}
-            <div className="bg-purple-50 rounded-3xl p-6 border border-purple-100">
-              <h3 className="font-extrabold text-xl text-purple-700 mb-4">🧺 Bảo Quản Khăn</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">🫧</span>
-                  <div>
-                    <p className="font-bold text-gray-800">Sau khi dùng</p>
-                    <p className="text-gray-500 text-sm">Giặt tay với xà phòng, xả sạch, phơi nơi thoáng mát</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">🌟</span>
-                  <div>
-                    <p className="font-bold text-gray-800">Dùng được 1000+ lần</p>
-                    <p className="text-gray-500 text-sm">Không dùng máy sấy, không ngâm chất tẩy mạnh</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* [7] Testimonials */}
+      <section className="py-14 px-4 sm:px-6 bg-[#F4FCF7]">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-xs font-bold text-[#27AE60] uppercase tracking-widest mb-3">Khách hàng nói gì</p>
+          <h2 className="text-2xl font-extrabold text-[#0D3B22] mb-8">
+            Người Biết Nấu Xôi Ngon<br />
+            Đều Biết Chọn Đúng Khăn
+          </h2>
+          <div className="rounded-2xl overflow-hidden shadow-md mb-8 max-w-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={IMG.review} alt="Review khách hàng thật" className="w-full object-contain" />
           </div>
-        </div>
-      </section>
-
-      {/* ╔═ SOCIAL PROOF / REVIEW ═╗ */}
-      <section className="py-14 px-4 sm:px-6 bg-[#FFFBF5]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8">
-            <span className="inline-block border border-amber-300 bg-amber-50 text-[#92400E] font-bold text-xs px-4 py-1.5 rounded-full tracking-widest mb-3">
-              KHÁCH HÀNG NÓI GÌ?
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800">
-              Người Nấu Xôi Giỏi Đều Biết<br />
-              <span className="text-[#B45309]">Khăn Đúng – Xôi Mới Ngon</span>
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-5 max-w-3xl mx-auto mb-8">
+          <div className="space-y-4">
             {[
-              {
-                name: 'S**u',
-                stars: 5,
-                text: '"Mua lâu rồi nhưng mãi mới dùng để đánh giá. Khăn to chà bá, chất liệu tốt. Công nhận đồ xôi có khăn phủ ngăn giảm hơi nước đọng vào xôi, xôi không bị ướt và nát, xôi ráo ngon hơn hẳn."',
-              },
-              {
-                name: 'H**g',
-                stars: 5,
-                text: '"Dùng thử thấy xôi ra không dính chảo chút nào, hạt bóng đẹp. Trước hay dùng màng bọc thực phẩm mà xôi hay bị ướt, giờ dùng khăn này xôi ráo hẳn. Mua thêm cái nữa để dùng khi đặt tiệc."',
-              },
-            ].map(r => (
-              <div key={r.name} className="bg-white rounded-2xl p-5 shadow-sm border border-amber-100">
-                <div className="flex items-center gap-1 mb-3">
-                  {Array.from({ length: r.stars }).map((_, i) => (
-                    <span key={i} className="text-amber-400 text-lg">★</span>
+              { name: 'Chị Lan · Hà Nội', text: '"Trước giờ đồ xôi hay bị dính chảo, gỡ ra mất công mà xôi nát. Từ hôm có khăn này là không bao giờ bị nữa. Xôi ráo đẹp, hạt bóng. Con bé khen ngon hơn hẳn mấy lần trước."' },
+              { name: 'Chị Hương · TP.HCM', text: '"Mua 2 cái dùng thay nhau. Giặt xong vẫn thơm tho, không bị mùi. Size 1m×1m vừa đúng cho nồi nhà mình. Ship nhanh, hàng đẹp."' },
+              { name: 'Cô Minh · Đà Nẵng', text: '"Nấu xôi bán hàng ngày nên cần khăn bền. Dùng được mấy tháng rồi vẫn tốt như mới. So với khăn màn trước thì khác xa — xôi ráo, không bị nhão từ trên xuống."' },
+            ].map((r, i) => (
+              <div key={i} className="bg-white rounded-2xl p-5 border border-[#C8E6D0] shadow-sm">
+                <div className="flex gap-0.5 mb-2" aria-label="5 sao">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <svg key={j} className="w-4 h-4 text-[#F0B429]" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed italic">{r.text}</p>
-                <p className="text-gray-400 text-xs mt-3">— {r.name} (review thực tế)</p>
+                <p className="text-gray-400 text-xs font-semibold mt-2">{r.name}</p>
               </div>
             ))}
           </div>
-
-          <div className="bg-amber-50 rounded-3xl p-6 text-center max-w-2xl mx-auto">
-            <p className="text-[#92400E] font-bold text-lg mb-2">
-              "Cái khăn nhỏ thôi mà thay đổi được hẳn nồi xôi. Từ hôm có khăn này là xôi nhà cô chưa bao giờ bị nhão nữa."
-            </p>
-            <p className="text-amber-700 text-sm italic">— Cô Hạ chia sẻ sau nhiều năm nấu xôi</p>
-          </div>
         </div>
       </section>
 
-      {/* ╔═ PRICING + ORDER FORM ═╗ */}
-      <section ref={orderRef} id="dat-hang" className="py-16 px-4 sm:px-6 bg-white">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <span className="inline-block border border-amber-300 bg-amber-50 text-[#92400E] font-bold text-xs px-5 py-1.5 rounded-full tracking-widest mb-3">
-              ĐẶT HÀNG
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-2">
-              Mang Khăn Đồ Xôi Bếp Cô Hạ<br />
-              <span className="text-[#B45309]">Về Bếp Nhà Bạn Hôm Nay</span>
-            </h2>
-            <p className="text-gray-500 max-w-md mx-auto">
-              Giao tận nhà toàn quốc · Thanh toán chuyển khoản · Hàng chính hãng từ Bếp Cô Hạ
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-10 items-start">
-            {/* Left: Value & Pricing */}
-            <div>
-              <div className="space-y-4 mb-8">
-                {[
-                  { key: 'nho', label: 'Khăn Nhỏ 60×60cm', price: PRICES['nho'], sub: 'Gia đình 1–2kg nếp · Nấu thường ngày', icon: '🧺', popular: false },
-                  { key: 'lon', label: 'Khăn Lớn 90×100cm', price: PRICES['lon'], sub: 'Tiệc, cúng giỗ, bán xôi · 3–4kg nếp', icon: '🪣', popular: true },
-                ].map(item => (
-                  <div key={item.key} className={`relative rounded-2xl p-5 border-2 ${
-                    item.popular ? 'border-[#B45309] bg-amber-50' : 'border-gray-200 bg-gray-50'
-                  }`}>
-                    {item.popular && (
-                      <span className="absolute -top-3 left-4 bg-[#B45309] text-white text-xs font-bold px-3 py-1 rounded-full">
-                        Phổ biến nhất
-                      </span>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">{item.icon}</span>
-                        <div>
-                          <p className="font-extrabold text-gray-800 text-lg">{item.label}</p>
-                          <p className="text-gray-500 text-sm">{item.sub}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-extrabold text-2xl text-[#B45309]">{fmt(item.price)}</p>
-                        <p className="text-gray-400 text-xs">/cái</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Guarantees */}
-              <div className="space-y-3">
-                {[
-                  { icon: '🚚', t: 'Giao hàng toàn quốc', d: 'Ship tận nhà, đóng gói cẩn thận' },
-                  { icon: '💳', t: 'Chuyển khoản – QR tự động', d: 'Đặt xong nhận QR ngay, không cần chờ lâu' },
-                  { icon: '✅', t: 'Hàng chính hãng Bếp Cô Hạ', d: 'Kiểm tra kỹ trước khi đóng gói gửi đi' },
-                  { icon: '🔄', t: 'Đổi trả nếu lỗi sản xuất', d: 'May viền sờn, vải lỗi – báo ảnh đổi ngay' },
-                ].map(item => (
-                  <div key={item.t} className="flex gap-3 items-start">
-                    <span className="text-xl flex-shrink-0">{item.icon}</span>
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">{item.t}</p>
-                      <p className="text-gray-500 text-xs">{item.d}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* [9] Value Anchor */}
+      <section className="py-12 px-4 sm:px-6 bg-[#0D3B22] text-white">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-xl sm:text-2xl font-extrabold mb-6">Tính Ra Chỉ...</h2>
+          <div className="flex justify-center gap-4 mb-6 flex-wrap">
+            <div className="bg-white/10 rounded-2xl p-4 text-center min-w-[110px]">
+              <p className="text-2xl font-extrabold text-[#F0B429]">49k</p>
+              <p className="text-green-300 text-xs mt-1">Giá 1 chiếc</p>
             </div>
-
-            {/* Right: Order Form */}
-            <div className="bg-[#FFFBF5] rounded-3xl p-6 sm:p-8 border border-amber-200 shadow-lg">
-              <h3 className="font-extrabold text-xl text-[#92400E] mb-6 text-center">
-                Điền Thông Tin Đặt Hàng
-              </h3>
-              <OrderForm />
+            <div className="flex items-center text-green-300 text-2xl">÷</div>
+            <div className="bg-white/10 rounded-2xl p-4 text-center min-w-[110px]">
+              <p className="text-2xl font-extrabold text-[#F0B429]">1000+</p>
+              <p className="text-green-300 text-xs mt-1">Lần dùng</p>
+            </div>
+            <div className="flex items-center text-green-300 text-2xl">=</div>
+            <div className="bg-[#F0B429] rounded-2xl p-4 text-center min-w-[110px] ring-2 ring-yellow-300">
+              <p className="text-2xl font-extrabold text-[#0D3B22]">~49đ</p>
+              <p className="text-[#155C34] text-xs font-bold mt-1">Mỗi lần nấu</p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ╔═ P.S. / URGENCY ═╗ */}
-      <section className="py-10 px-4 sm:px-6 bg-gradient-to-r from-[#451A03] to-[#92400E] text-white text-center">
-        <div className="max-w-2xl mx-auto">
-          <p className="text-amber-200 text-sm font-semibold mb-2">P.S.</p>
-          <p className="text-lg leading-relaxed">
-            Mỗi nồi xôi, mỗi mâm cỗ đều xứng đáng có <strong>xôi ngon, ráo hạt, đẹp mắt</strong>.
-            Đừng để nồi xôi tiếp theo lại bị nhão, bị dính vì thiếu một chiếc khăn đúng chuẩn.
-          </p>
-          <button onClick={scrollToOrder}
-            className="mt-6 bg-[#D97706] hover:bg-[#B45309] text-white font-extrabold px-10 py-4 rounded-2xl transition-colors active:scale-95 text-lg">
+          <p className="text-green-200 text-sm max-w-sm mx-auto">49.000đ — rẻ hơn một ly cà phê — mà mang lại hàng nghìn nồi xôi ngon cho gia đình.</p>
+          <button onClick={scrollToOrder} className="mt-6 bg-[#F0B429] hover:bg-[#e8a820] text-[#0D3B22] font-extrabold px-10 min-h-[52px] rounded-2xl transition-all active:scale-95 text-lg">
             Đặt Hàng Ngay →
           </button>
         </div>
       </section>
 
-      {/* ╔═ FOOTER ═╗ */}
-      <footer className="bg-gray-900 text-gray-400 py-10 px-4 sm:px-6 text-center text-sm">
-        <div className="max-w-3xl mx-auto space-y-3">
+      {/* [10] Guarantee */}
+      <section className="py-12 px-4 sm:px-6 bg-white">
+        <div className="max-w-2xl mx-auto">
+          <div className="border-2 border-[#C8E6D0] rounded-3xl p-6 sm:p-8 text-center">
+            <div className="w-16 h-16 bg-[#F4FCF7] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-[#27AE60]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+            </div>
+            <h3 className="font-extrabold text-xl text-[#0D3B22] mb-2">Cam Kết Đổi Trả Nếu Lỗi</h3>
+            <p className="text-gray-600 text-sm leading-relaxed max-w-md mx-auto">
+              Nếu nhận hàng bị lỗi sản xuất — may viền sờn ngay từ đầu, vải bị lỗi — Cô Hạ đổi trả miễn phí. Gửi ảnh về inbox Facebook là giải quyết ngay trong ngày.
+            </p>
+            <p className="text-[#27AE60] font-bold text-sm mt-3">Bạn không có gì để mất cả.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* [11] Is For / Not For */}
+      <section className="py-12 px-4 sm:px-6 bg-[#F4FCF7]">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-extrabold text-[#0D3B22] mb-6 text-center">Khăn Này Dành Cho Ai?</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="bg-white rounded-2xl p-5 border border-[#C8E6D0]">
+              <p className="font-bold text-[#155C34] mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                Phù hợp với bạn nếu...
+              </p>
+              <ul className="space-y-2 text-sm text-gray-600">
+                {['Hay nấu xôi cho gia đình 3–5 người', 'Chuẩn bị tiệc, giỗ chạp, cúng lễ', 'Đang học nấu xôi lần đầu', 'Bán xôi — cần chất lượng ổn định mỗi ngày', 'Muốn dụng cụ bền, dùng lâu dài'].map(t => (
+                  <li key={t} className="flex gap-2 items-start">
+                    <svg className="w-4 h-4 text-[#27AE60] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-white rounded-2xl p-5 border border-gray-100">
+              <p className="font-bold text-gray-400 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                Có thể chưa cần nếu...
+              </p>
+              <ul className="space-y-2 text-sm text-gray-400">
+                {['Bạn chỉ nấu cơm, không nấu xôi', 'Đã có khăn chuyên dụng hoạt động tốt', 'Chỉ hấp thức ăn thông thường'].map(t => (
+                  <li key={t} className="flex gap-2 items-start">
+                    <svg className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* [12] FAQ */}
+      <section className="py-14 px-4 sm:px-6 bg-white">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-extrabold text-[#0D3B22] mb-6 text-center">Câu Hỏi Thường Gặp</h2>
+          <div className="space-y-3">
+            {[
+              { q: 'Size 1m×1m có quá to cho nồi nhỏ không?', a: 'Không. Kích thước 1m×1m đủ để gấp đôi lại khi dùng cho chõ nhỏ. Một chiếc dùng được nhiều kích cỡ nồi khác nhau — rất tiện.' },
+              { q: 'Dùng xong giặt thế nào?', a: 'Giặt tay bằng xà phòng loãng, xả sạch, phơi nơi thoáng mát. Không cần máy sấy, không ngâm chất tẩy mạnh. Vải giữ được hình dạng qua rất nhiều lần giặt.' },
+              { q: 'Vải có an toàn thực phẩm không?', a: 'Có. Cô Hạ chọn vải không mùi lạ, không ra màu khi hấp ở nhiệt độ cao. Được dùng trực tiếp cho nhà Cô Hạ trước khi đưa ra bán.' },
+              { q: 'Tôi chưa bao giờ đồ xôi, dùng có dễ không?', a: 'Dùng được ngay. Khăn giúp người mới bắt đầu thành công hơn — không lo dính chảo, hơi đi đều tự nhiên. Cô Hạ có thể tư vấn thêm qua inbox nếu cần.' },
+              { q: 'Ship đến bao lâu? Có theo dõi đơn không?', a: 'Nội thành: 2–4 ngày. Tỉnh xa: 3–5 ngày. Cô Hạ gửi mã vận đơn để bạn theo dõi trực tiếp sau khi đơn được xác nhận.' },
+              { q: 'Giá 49.000đ đã bao gồm phí ship chưa?', a: 'Chưa. 49.000đ là giá sản phẩm. Phí vận chuyển tính riêng khi giao, tùy khu vực — thường từ 20.000đ–35.000đ.' },
+              { q: 'Nếu hàng bị lỗi thì sao?', a: 'Cô Hạ đổi trả miễn phí nếu lỗi sản xuất (may viền sờn, vải lỗi). Gửi ảnh về Facebook Bếp Cô Hạ, xử lý trong ngày.' },
+            ].map(item => <Faq key={item.q} q={item.q} a={item.a} />)}
+          </div>
+        </div>
+      </section>
+
+      {/* [13] Order Form */}
+      <section ref={orderRef} id="dat-hang" className="py-16 px-4 sm:px-6 bg-[#F4FCF7]">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-8">
+            <p className="text-xs font-bold text-[#27AE60] uppercase tracking-widest mb-2">Đặt hàng ngay</p>
+            <h2 className="text-2xl font-extrabold text-[#0D3B22]">
+              Mang Về Bếp Hôm Nay —<br />
+              <span className="text-[#155C34]">Nồi Xôi Tới Ngon Hơn Liền</span>
+            </h2>
+            <p className="text-gray-500 text-sm mt-2">Giao tận nhà · Chuyển khoản · Hàng chính hãng</p>
+          </div>
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C8E6D0] shadow-lg">
+            <OrderForm />
+          </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs text-gray-400">
+            <span>Bảo mật thông tin</span><span>·</span>
+            <span>Ship toàn quốc</span><span>·</span>
+            <span>Đổi trả nếu lỗi SX</span><span>·</span>
+            <span>Hỗ trợ qua Facebook</span>
+          </div>
+        </div>
+      </section>
+
+      {/* [14] Footer */}
+      <footer className="bg-[#0D3B22] text-green-300 py-10 px-4 text-center text-sm">
+        <div className="max-w-xl mx-auto space-y-3">
           <div className="flex justify-center">
             <div className="bg-white rounded-xl px-4 py-2 inline-flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/logo-bep-co-ha.png" alt="Bếp Cô Hạ"
-                className="h-9 w-9 object-contain"
-                onError={e => { (e.currentTarget as HTMLImageElement).style.display='none' }} />
+              <img src="/images/logo-bep-co-ha.png" alt="Bếp Cô Hạ" className="h-9 w-9 object-contain"
+                onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
               <div className="text-left">
-                <p className="text-[#92400E] font-extrabold text-base leading-tight">Bếp Cô Hạ</p>
+                <p className="text-[#0D3B22] font-extrabold text-sm leading-tight">Bếp Cô Hạ</p>
                 <p className="text-gray-400 text-xs">Hacofood.vn</p>
               </div>
             </div>
           </div>
-          <p>Khăn Đồ Xôi Bếp Cô Hạ – Vải lưới chuyên dụng, may viền kỹ lưỡng</p>
-          <p>Mọi thắc mắc liên hệ qua: <strong className="text-gray-300">Facebook: Bếp Cô Hạ</strong> hoặc số điện thoại trên bao bì</p>
-          <p className="text-gray-600 text-xs">© 2025 Hacofood.vn · Bếp Cô Hạ. All rights reserved.</p>
+          <p className="text-green-400 font-semibold">Khăn Đồ Xôi 1m×1m — Vải lưới hấp xôi chuyên dụng</p>
+          <p>Liên hệ: <strong className="text-white">Facebook Bếp Cô Hạ</strong></p>
+          <p className="text-green-600 text-xs pt-2">© 2025 Hacofood.vn · Bếp Cô Hạ. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Sticky CTA */}
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 p-3 pb-4 bg-white/90 backdrop-blur-sm border-t border-[#C8E6D0] transition-all duration-300 ${showSticky ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'}`}
+        aria-hidden={!showSticky}>
+        <button onClick={scrollToOrder}
+          className="w-full min-h-[52px] rounded-2xl font-extrabold text-[#0D3B22] text-lg bg-[#F0B429] hover:bg-[#e8a820] shadow-lg active:scale-95 transition-all">
+          ĐẶT HÀNG NGAY — {fmt(PRICE)} →
+        </button>
+      </div>
 
     </div>
   )
