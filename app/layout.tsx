@@ -2,13 +2,17 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Khăn Đồ Xôi Bếp Cô Hạ – Xôi Ngon Không Dính, Không Nhão',
-  description: 'Khăn đồ xôi chuyên dụng Bếp Cô Hạ – vải lưới cao cấp, chống dính, hơi nước thấu đều, xôi chín ngon ráo hạt. Dùng được 1000+ lần. Giao tận nhà toàn quốc.',
+  title: 'Khăn Đồ Xôi 1m×1m – Chỉ 49.000đ | Bếp Cô Hạ',
+  description: 'Khăn vải lưới hấp xôi chuyên dụng 1m×1m. Xôi chín đều, ráo hạt, không dính chảo. Dùng 1000+ lần. Chỉ 49.000đ – giao toàn quốc.',
+  keywords: ['khăn đồ xôi', 'vải hấp xôi', 'khăn lưới hấp', 'đồ xôi không dính', 'bếp cô hạ', 'hacofood'],
   openGraph: {
-    title: 'Khăn Đồ Xôi Bếp Cô Hạ',
-    description: 'Xôi ngon không dính, không nhão – bí quyết của khăn đồ xôi đúng chuẩn. Giao tận nhà toàn quốc.',
+    title: 'Khăn Đồ Xôi 1m×1m – Chỉ 49.000đ | Bếp Cô Hạ',
+    description: 'Xôi chín đều, ráo hạt, không dính chảo. Vải lưới chuyên dụng, dùng 1000+ lần. Giao toàn quốc.',
+    url: 'https://khandoxoi.vercel.app',
+    siteName: 'Bếp Cô Hạ – Hacofood.vn',
     locale: 'vi_VN',
     type: 'website',
+    // opengraph-image.tsx được tự động dùng làm og:image
   },
 }
 
