@@ -2,18 +2,14 @@ const PANCAKE_API_BASE = 'https://pos.pages.fm/api/v1'
 const SHOP_ID = process.env.PANCAKE_SHOP_ID || ''
 const API_KEY = process.env.PANCAKE_API_KEY || ''
 
-// Variation IDs sản phẩm trong POScake
-const VARIATION_IDS: Record<string, string> = {
-  'nho': process.env.PANCAKE_VAR_NHO || '',
-  'lon': process.env.PANCAKE_VAR_LON || '',
-}
+const VARIATION_ID = process.env.PANCAKE_VAR_LON || ''
 
 export async function createPancakeOrder(data: {
   name: string
   phone: string
   email: string
   address: string
-  product: 'nho' | 'lon'
+  product: string
   quantity: number
   totalPrice: number
   note?: string
@@ -22,14 +18,12 @@ export async function createPancakeOrder(data: {
     console.warn('[pancake] PANCAKE_API_KEY hoặc PANCAKE_SHOP_ID chưa cấu hình — bỏ qua')
     return null
   }
-
-  const variationId = VARIATION_IDS[data.product]
-  if (!variationId) {
-    console.warn(`[pancake] PANCAKE_VAR_${data.product.toUpperCase()} chưa cấu hình — bỏ qua`)
+  if (!VARIATION_ID) {
+    console.warn('[pancake] PANCAKE_VAR_LON chưa cấu hình — bỏ qua')
     return null
   }
 
-  const unitPrice = data.totalPrice / data.quantity
+  const unitPrice = Math.round(data.totalPrice / data.quantity)
 
   const body = {
     bill_full_name: data.name,
@@ -37,7 +31,7 @@ export async function createPancakeOrder(data: {
     bill_email: data.email || undefined,
     note: [
       data.note ? `Ghi chú: ${data.note}` : '',
-      `Đặt qua website hacofood.vn/khan-do-xoi`,
+      'Đặt qua website khandoxoi.vercel.app',
     ].filter(Boolean).join(' | '),
     cod: data.totalPrice,
     shipping_address: {
@@ -47,7 +41,7 @@ export async function createPancakeOrder(data: {
     },
     items: [
       {
-        variation_id: variationId,
+        variation_id: VARIATION_ID,
         quantity: data.quantity,
         price: unitPrice,
       },
