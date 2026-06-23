@@ -11,6 +11,21 @@ async function sendMessage(chatId: string, text: string) {
   })
 }
 
+export async function notifyPaymentMismatch(data: {
+  paymentRef: string; received: number; expected: number; content: string
+}) {
+  const msg = `⚠️ <b>KHĂN ĐỒ XÔI – CHUYỂN THIẾU TIỀN</b>
+
+• Mã TT: <code>${data.paymentRef}</code>
+• Đã nhận: <b>${data.received.toLocaleString('vi-VN')}đ</b>
+• Cần thu: <b>${data.expected.toLocaleString('vi-VN')}đ</b>
+• Nội dung CK: ${data.content}
+• Thời gian: ${new Date().toLocaleString('vi-VN')}
+
+❗ Đơn CHƯA được xác nhận tự động — vui lòng kiểm tra & xử lý tay`
+  await sendMessage(ORDER_GROUP_ID, msg)
+}
+
 export async function notifyKdxPending(data: {
   name: string; phone: string; address: string
   product: string; quantity: number; totalPrice: number

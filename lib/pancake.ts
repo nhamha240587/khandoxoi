@@ -4,6 +4,27 @@ const API_KEY = process.env.PANCAKE_API_KEY || ''
 
 const VARIATION_ID = process.env.PANCAKE_VAR_LON || ''
 
+/** Cập nhật trạng thái đơn POScake (vd 9 = Chờ chuyển hàng). */
+export async function updatePancakeOrderStatus(orderId: string, status: number) {
+  if (!API_KEY || !SHOP_ID) return null
+  const url = `${PANCAKE_API_BASE}/shops/${SHOP_ID}/orders/${orderId}?api_key=${API_KEY}`
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    if (!res.ok) {
+      console.warn('[pancake] updateOrderStatus thất bại:', res.status, await res.text())
+      return null
+    }
+    return await res.json()
+  } catch (err) {
+    console.warn('[pancake] updateOrderStatus lỗi:', err)
+    return null
+  }
+}
+
 export async function createPancakeOrder(data: {
   name: string
   phone: string
