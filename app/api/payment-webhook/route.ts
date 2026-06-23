@@ -10,7 +10,9 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('Authorization') || ''
     const apiKey = authHeader.replace(/^Apikey\s+/i, '').trim()
     const expectedKey = process.env.SEPAY_API_KEY || ''
-    if (expectedKey && apiKey !== expectedKey) {
+    // Fail-closed: thiếu key cấu hình HOẶC sai key đều từ chối — KHÔNG mở cửa webhook
+    if (!expectedKey || apiKey !== expectedKey) {
+      console.warn('[webhook] Từ chối: SEPAY_API_KEY chưa cấu hình hoặc key sai')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
